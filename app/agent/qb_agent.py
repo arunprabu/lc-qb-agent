@@ -16,6 +16,7 @@ import os
 from langchain.agents import create_agent
 from .prompts import SYSTEM_PROMPT
 from ..tools.grammar_tool import generate_grammar_mcqs
+from ..tools.comprehension_tool import generate_comprehension_passages
 
 load_dotenv()
 
@@ -24,7 +25,7 @@ def build_agent(topic: str, difficulty: str):
     
     question_bank_agent = create_agent(
         model="gpt-4o-mini",
-        tools=[generate_grammar_mcqs],
+        tools=[generate_grammar_mcqs, generate_comprehension_passages],
         system_prompt=SYSTEM_PROMPT
     )
 

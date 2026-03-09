@@ -11,7 +11,7 @@ class GrammarMCQ(BaseModel):
     difficulty: str
     topic: str
 
-class GrammarMCQListOuput(BaseModel):
+class GrammarMCQListOutput(BaseModel):
     questions: List[GrammarMCQ]
 
 def generate_grammar_mcqs(topic: str, difficulty: str, count: int = 5) -> str:
@@ -29,7 +29,7 @@ def generate_grammar_mcqs(topic: str, difficulty: str, count: int = 5) -> str:
     # let's connect to LLM and generate questions based on the topic and difficulty
     llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=1000, temperature=0.5)
     # telling llm to produce output in a structured format that matches our GrammarMCQListOuput model
-    structured_llm = llm.with_structured_output(GrammarMCQListOuput)
+    structured_llm = llm.with_structured_output(GrammarMCQListOutput)
 
     # Let's invoke with a prompt
     result:GrammarMCQListOuput = structured_llm.invoke(GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE)
