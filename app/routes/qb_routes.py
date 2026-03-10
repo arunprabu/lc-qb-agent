@@ -10,7 +10,7 @@ class GenerateQuestionRequest(BaseModel):
     type: Literal["grammar", "comprehension"]
     topic: str
     difficulty: Literal["beginner", "intermediate", "advanced"]
-    count: int
+    count: str
 
 
 @router.get("/health")

@@ -29,7 +29,7 @@ def build_agent():
 
     return question_bank_agent
 
-async def run_agent(type: str, topic: str, difficulty: str, count: int, ):
+async def run_agent(type: str, topic: str, difficulty: str, count: str):
     print(f"AGENT: Running agent for topic: {topic} with difficulty: {difficulty} and count: {count} and type: {type}")
     agent = build_agent()
     print("AGENT: Agent built successfully, invoking now...")
@@ -37,7 +37,7 @@ async def run_agent(type: str, topic: str, difficulty: str, count: int, ):
       "messages": [
         {
           "role": "user", 
-          "content": "Generate " + str(count) + " " + type + " questions for the topic: " + topic + " with difficulty: " + difficulty
+          "content": "Generate " + count + " " + type + " questions for the topic: " + topic + " with difficulty: " + difficulty
         }
       ]
     })
