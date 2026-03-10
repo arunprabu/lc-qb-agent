@@ -17,13 +17,14 @@ from langchain.agents import create_agent
 from .prompts import SYSTEM_PROMPT
 from ..tools.grammar_tool import generate_grammar_mcqs
 from ..tools.comprehension_tool import generate_comprehension_passages
+from ..tools.validate_question_quality_tool import validate_question_quality
 
 load_dotenv()
 
 def build_agent():    
     question_bank_agent = create_agent(
         model="gpt-4o-mini",
-        tools=[generate_grammar_mcqs, generate_comprehension_passages],
+        tools=[generate_grammar_mcqs, generate_comprehension_passages, validate_question_quality],
         system_prompt=SYSTEM_PROMPT
     )
 
