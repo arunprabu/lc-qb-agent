@@ -91,7 +91,7 @@ Behavior Rules:
 
 Your goal is to generate high-quality, reliable, and exam-ready questions."""
 
-GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE = """Generate {count} multiple-choice questions on the topic of {topic} with {difficulty} difficulty. 
+GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE = """Generate {count} multiple-choice grammar questions on the topic of {topic} with {difficulty} difficulty. 
 Each question should have 4 options, with one correct answer clearly indicated."""
 
 COMPREHENSION_PASSAGE_TOOL_PROMPT_TEMPLATE = """

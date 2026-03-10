@@ -20,9 +20,7 @@ from ..tools.comprehension_tool import generate_comprehension_passages
 
 load_dotenv()
 
-def build_agent(topic: str, difficulty: str):
-    print(f"AGENT: Building agent for topic: {topic} with difficulty: {difficulty}")
-    
+def build_agent():    
     question_bank_agent = create_agent(
         model="gpt-4o-mini",
         tools=[generate_grammar_mcqs, generate_comprehension_passages],
@@ -31,15 +29,15 @@ def build_agent(topic: str, difficulty: str):
 
     return question_bank_agent
 
-async def run_agent(topic: str, difficulty: str):
-    print(f"AGENT: Running agent for topic: {topic} with difficulty: {difficulty}")
-    agent = build_agent(topic, difficulty)
+async def run_agent(type: str, topic: str, difficulty: str, count: int, ):
+    print(f"AGENT: Running agent for topic: {topic} with difficulty: {difficulty} and count: {count} and type: {type}")
+    agent = build_agent()
     print("AGENT: Agent built successfully, invoking now...")
     result = agent.invoke({
       "messages": [
         {
           "role": "user", 
-          "content": "Generate questions for the topic: " + topic + " with difficulty: " + difficulty
+          "content": "Generate " + str(count) + " " + type + " questions for the topic: " + topic + " with difficulty: " + difficulty
         }
       ]
     })
@@ -50,6 +48,8 @@ async def run_agent(topic: str, difficulty: str):
     return {
         "message": "Agent execution complete at agent level",
         "agent_response": result['messages'][-1].content,
+        "type": type,
         "topic": topic,
-        "difficulty": difficulty
+        "difficulty": difficulty, 
+        "count": count
     }
