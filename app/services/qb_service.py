@@ -9,7 +9,7 @@ class QuestionBankService:
         result = await run_agent(type, topic, difficulty, count)
         return {
             "message": "Agent execution complete at service level",
-            "agent_response": result['agent_response'],
+            "questions": result['questions'],
             "type": type,
             "topic": topic,
             "difficulty": difficulty,
