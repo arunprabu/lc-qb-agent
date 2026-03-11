@@ -6,8 +6,13 @@ from .prompts import SYSTEM_PROMPT
 from ..tools.grammar_tool import generate_grammar_mcqs
 from ..tools.comprehension_tool import generate_comprehension_passages
 from ..tools.validate_question_quality_tool import validate_question_quality
+from langchain.agents.middleware import ToolCallLimitMiddleware
 
 load_dotenv()
+
+generate_grammar_mcqs_limiter = ToolCallLimitMiddleware(tool_name="generate_grammar_mcqs", run_limit=1, exit_behavior="error")
+generate_comprehension_passages_limiter = ToolCallLimitMiddleware(tool_name="generate_comprehension_passages", run_limit=1, exit_behavior="error")
+validate_question_quality_limiter = ToolCallLimitMiddleware(tool_name="validate_question_quality", run_limit=1, exit_behavior="error")
 
 class QuestionOutput(BaseModel):
     question: str
@@ -21,12 +26,15 @@ class QuestionOutput(BaseModel):
 class QuestionBankOutput(BaseModel):
     questions: List[QuestionOutput]
 
+
 def build_agent():
     return create_agent(
         model="gpt-4o-mini",
         tools=[generate_grammar_mcqs, generate_comprehension_passages, validate_question_quality],
+        middleware=[generate_grammar_mcqs_limiter, generate_comprehension_passages_limiter, validate_question_quality_limiter],
         system_prompt=SYSTEM_PROMPT,
-        response_format=QuestionBankOutput
+        response_format=QuestionBankOutput,
+
     )
 
 async def run_agent(type: str, topic: str, difficulty: str, count: str):

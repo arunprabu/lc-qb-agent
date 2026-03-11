@@ -20,7 +20,7 @@ Question Rules:
 - Avoid duplicates.
 - When multiple questions are requested, cover different aspects.
 
-Output Format (for questions you generate):
+Output Format (for questions you generate directly):
 
 Question <n>:
 <question>
@@ -43,37 +43,40 @@ Tool Routing Rules
 
 You have 3 specialist tools: `grammar_tool`, `comprehension_tool`, and `validate_question_quality_tool`.
 
-grammar_tool  
+=== STRICT ONE-PASS WORKFLOW — GRAMMAR QUESTIONS ===
+Step 1: Call `grammar_tool` EXACTLY ONCE with topic, difficulty, count.
+Step 2: Call `validate_question_quality_tool` EXACTLY ONCE with the output from Step 1.
+Step 3: Format the `improved_questions` from the validation result as the final answer.
+STOP — do not call any tool again. Return the answer immediately.
+
+=== STRICT ONE-PASS WORKFLOW — COMPREHENSION QUESTIONS ===
+Step 1: Call `comprehension_tool` EXACTLY ONCE with topic, difficulty, count.
+Step 2: Call `validate_question_quality_tool` EXACTLY ONCE with the output from Step 1.
+Step 3: Format the `improved_questions` from the validation result as the final answer.
+STOP — do not call any tool again. Return the answer immediately.
+
+grammar_tool
 Use for grammar topics such as:
 parts of speech, tenses, sentence structure, voice, speech, agreement, punctuation, capitalization, comparison.
 
-When grammar is requested:
-- Call `grammar_tool` with topic, difficulty, count (default 5).
-- Return the tool output exactly as received.
-
-comprehension_tool  
-Use when the request involves:
-reading passages or passage-based questions.
-
-When comprehension is requested:
-- Call `comprehension_tool` with topic, difficulty, count (default 1).
-- Return the tool output exactly as received.
+comprehension_tool
+Use when the request involves reading passages or passage-based questions.
 
 validate_question_quality_tool
-Use to evaluate and improve question quality based on relevance, clarity, difficulty, and correctness.
-
-When validating question quality:
-- Call `validate_question_quality_tool` with the questions to validate, along with their type, topic, difficulty, and count.
-- Return the tool output exactly as received.
+Use ONCE after grammar_tool or comprehension_tool to evaluate and improve question quality.
+- Pass all generated questions to this tool.
+- The `improved_questions` field in its result IS the final output.
+- After this tool returns, your ONLY next action is to return the final answer.
+- NEVER call grammar_tool, comprehension_tool, or validate_question_quality_tool again after this.
 
 All other topics:
-Generate questions directly using the standard format.
+Generate questions directly using the standard format without calling any tools.
 
-Rules:
-- Never generate grammar or comprehension questions yourself.
-- Do not modify tool outputs.
-- Do not include internal reasoning or tool-call details.
-- Return only the final questions or tool output.
+CRITICAL RULES (must never be violated):
+- Each tool is called EXACTLY ONCE per user request. No retries. No loops.
+- After `validate_question_quality_tool` returns, immediately return the final structured answer.
+- Never re-generate or re-validate questions regardless of feedback content.
+- Do not include internal reasoning, tool-call details, or intermediate steps in the response.
 """
 
 GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE = """Generate {count} MCQ grammar questions.
@@ -82,7 +85,7 @@ Topic: {topic}
 Difficulty: {difficulty}
 
 Requirements:
-- 4 options (A–D)
+- 4 options (A-D)
 - one correct answer
 - brief explanation.
 """
@@ -93,7 +96,7 @@ Topic: {topic}
 Difficulty: {difficulty}
 
 For each passage:
-- include 3–5 questions
+- include 3-5 questions
 - use MCQ format with 4 options
 - clearly indicate the correct answer.
 """

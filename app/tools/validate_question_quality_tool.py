@@ -20,6 +20,11 @@ from typing import List
 from langchain_openai import ChatOpenAI
 from ..agent.prompts import VALIDATE_QUESTION_QUALITY_PROMPT_TEMPLATE
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class ValidationResult(BaseModel):
     is_valid: bool
     feedback: str
@@ -30,7 +35,8 @@ def validate_question_quality(questions: List[str], type: str, topic: str, diffi
   """Validate the quality of the generated questions based on relevance, clarity, difficulty level, and correctness."""
 
   print(f"TOOL: Validating quality of {len(questions)} questions for topic: {topic} with difficulty: {difficulty} and type: {type}")
-  llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=1500, temperature=0.5)
+  max_tokens = int(os.getenv("MAX_TOKENS_FROM_TOOLS", 1500))
+  llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=max_tokens, temperature=0.5)
   structured_llm = llm.with_structured_output(ValidationResult)
 
   result: ValidationResult = structured_llm.invoke(VALIDATE_QUESTION_QUALITY_PROMPT_TEMPLATE + "\n\n" + "\n".join(questions))
