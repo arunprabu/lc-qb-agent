@@ -2,13 +2,14 @@
 # we will use postgres for this purpose and we will use sqlalchemy to interact with the database.
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, JSON
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from sqlalchemy import CheckConstraint, Column, Integer, String, DateTime, JSON
+from app.db.database import Base
 
 class ComprehensionQuestion(Base):
     __tablename__ = "comprehension_questions"
+    __table_args__ = (
+        CheckConstraint("correct_answer IN ('a','b','c','d')", name="ck_comprehension_correct_answer"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     topic = Column(String, index=True)
