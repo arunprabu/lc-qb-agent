@@ -16,28 +16,39 @@ the questions to improve their quality and ensure they are suitable for use in t
 
 
 from pydantic import BaseModel
-from typing import List
+from typing import Dict, Literal, List, Optional
 from langchain_openai import ChatOpenAI
 from ..agent.prompts import VALIDATE_QUESTION_QUALITY_PROMPT_TEMPLATE
+import json
 
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
+class ValidatedQuestion(BaseModel):
+    topic: str
+    difficulty: str
+    passage: Optional[str] = None
+    question: str
+    options: Dict[Literal["a", "b", "c", "d"], str]
+    correct_answer: Literal["a", "b", "c", "d"]
+    explanation: str
+
+
 class ValidationResult(BaseModel):
-    is_valid: bool
-    feedback: str
-    original_questions: List[str]
-    improved_questions: List[str] = []
+    improved_questions: List[ValidatedQuestion]
 
-def validate_question_quality(questions: List[str], type: str, topic: str, difficulty: str, count: int = 5) -> ValidationResult:
-  """Validate the quality of the generated questions based on relevance, clarity, difficulty level, and correctness."""
+def validate_question_quality(questions: str, type: str, topic: str, difficulty: str, count: int = 5) -> str:
+    """Validate the quality of the generated questions based on relevance, clarity, difficulty level, and correctness."""
 
-  print(f"TOOL: Validating quality of {len(questions)} questions for topic: {topic} with difficulty: {difficulty} and type: {type}")
-  max_tokens = int(os.getenv("MAX_TOKENS_FROM_TOOLS", 1500))
-  llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=max_tokens, temperature=0.5)
-  structured_llm = llm.with_structured_output(ValidationResult)
+    print(f"TOOL: Validating quality of questions for topic: {topic} with difficulty: {difficulty} and type: {type}")
+    max_tokens = int(os.getenv("MAX_TOKENS_FROM_TOOLS", 1500))
+    llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=max_tokens, temperature=0.5)
+    structured_llm = llm.with_structured_output(ValidationResult, method="function_calling")
 
-  result: ValidationResult = structured_llm.invoke(VALIDATE_QUESTION_QUALITY_PROMPT_TEMPLATE + "\n\n" + "\n".join(questions))
-  return result.json()
+    result: ValidationResult = structured_llm.invoke(VALIDATE_QUESTION_QUALITY_PROMPT_TEMPLATE + "\n\n" + questions)
+    result_payload = {
+        "questions": [q.model_dump() for q in result.improved_questions],
+    }
+    return json.dumps(result_payload, ensure_ascii=True)

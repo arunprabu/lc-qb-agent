@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import Dict, Literal, List
 from langchain_openai import ChatOpenAI
 from ..agent.prompts import COMPREHENSION_PASSAGE_TOOL_PROMPT_TEMPLATE
 import os
@@ -9,25 +9,26 @@ load_dotenv()
 
 # pydantic models to define the structure of the comprehension passage and questions
 class ComprehensionQuestion(BaseModel):
+    topic: str
+    difficulty: str
+    passage: str
     question: str
-    options: List[str]
-    correct_answer: str
+    options: Dict[Literal["a", "b", "c", "d"], str]
+    correct_answer: Literal["a", "b", "c", "d"]
     explanation: str
 
 class ComprehensionPassage(BaseModel):
-    passage: str
     questions: List[ComprehensionQuestion]
 
 
-def generate_comprehension_passages(topic: str, difficulty: str, count: int = 1) -> str:
+def generate_comprehension_passages(topic: str, difficulty: str, count: int = 3) -> str:
     """
-    Generate comprehension passages based on the given topic and difficulty level. 
-    Each passage should be followed by 3-5 questions that test the reader's understanding of the passage.
+    Generate one reading comprehension passage followed by 'count' MCQ questions based on the passage.
     
     Args:
-        topic (str): The topic for which to generate comprehension passages.
-        difficulty (str): The difficulty level of the passages (e.g., "beginner", "intermediate", "advanced").
-        count (int): The number of passages to generate. Default is 1.
+        topic (str): The topic for which to generate the comprehension passage.
+        difficulty (str): The difficulty level (e.g., "beginner", "intermediate", "advanced").
+        count (int): The number of MCQ questions to generate based on the passage. Default is 3.
     """
 
     print(f"TOOL: Generating {count} {difficulty} comprehension passages for topic: {topic}")
@@ -36,9 +37,15 @@ def generate_comprehension_passages(topic: str, difficulty: str, count: int = 1)
     max_tokens = int(os.getenv("MAX_TOKENS_FROM_TOOLS", 1500))
     llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=max_tokens, temperature=0.5)
     # telling llm to produce output in a structured format that matches our Passage model
-    structured_llm = llm.with_structured_output(ComprehensionPassage)
+    structured_llm = llm.with_structured_output(ComprehensionPassage, method="function_calling")
 
     # Let's invoke with a prompt
-    result:ComprehensionPassage = structured_llm.invoke(COMPREHENSION_PASSAGE_TOOL_PROMPT_TEMPLATE)
+    prompt = (
+        COMPREHENSION_PASSAGE_TOOL_PROMPT_TEMPLATE
+        .replace("{topic}", topic)
+        .replace("{difficulty}", difficulty)
+        .replace("{count}", str(count))
+    )
+    result: ComprehensionPassage = structured_llm.invoke(prompt)
 
-    return result.json()
+    return result.model_dump_json()

@@ -1,6 +1,6 @@
 from app.agent.qb_agent import run_agent
 from app.db.database import SessionLocal
-from app.db.repository import create_grammar_questions
+from app.db.repository import create_grammar_questions, create_comprehension_questions
 
 class QuestionBankService:
 
@@ -17,7 +17,7 @@ class QuestionBankService:
             if(type == "grammar"):
                 status = create_grammar_questions(db, result['questions'])
             elif(type == "comprehension"):
-                print("will do this later")
+                status = create_comprehension_questions(db, result['questions'])
             else:   
                 print('unknown type - unable to save')
         except Exception as e:

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import Dict, Literal, List, Optional
 from langchain_openai import ChatOpenAI
 from ..agent.prompts import GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE
 import os 
@@ -8,12 +8,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class GrammarMCQ(BaseModel):
-    question: str
-    options: List[str]
-    correct_answer: str
-    explanation: str
-    difficulty: str
     topic: str
+    difficulty: str
+    passage: Optional[str] = None
+    question: str
+    options: Dict[Literal["a", "b", "c", "d"], str]
+    correct_answer: Literal["a", "b", "c", "d"]
+    explanation: str
 
 class GrammarMCQListOutput(BaseModel):
     questions: List[GrammarMCQ]
@@ -34,10 +35,16 @@ def generate_grammar_mcqs(topic: str, difficulty: str, count: int = 5) -> str:
     max_tokens = int(os.getenv("MAX_TOKENS_FROM_TOOLS", 1500))
     llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=max_tokens, temperature=0.5)
     # telling llm to produce output in a structured format that matches our GrammarMCQListOuput model
-    structured_llm = llm.with_structured_output(GrammarMCQListOutput)
+    structured_llm = llm.with_structured_output(GrammarMCQListOutput, method="function_calling")
 
     # Let's invoke with a prompt
-    result:GrammarMCQListOuput = structured_llm.invoke(GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE)
+    prompt = (
+        GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE
+        .replace("{topic}", topic)
+        .replace("{difficulty}", difficulty)
+        .replace("{count}", str(count))
+    )
+    result: GrammarMCQListOutput = structured_llm.invoke(prompt)
 
     # print(f"TOOL: Generated questions: {result}")
-    return result.json()
+    return result.model_dump_json()

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Literal
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from .prompts import SYSTEM_PROMPT
@@ -15,13 +15,13 @@ generate_comprehension_passages_limiter = ToolCallLimitMiddleware(tool_name="gen
 validate_question_quality_limiter = ToolCallLimitMiddleware(tool_name="validate_question_quality", run_limit=1, exit_behavior="error")
 
 class QuestionOutput(BaseModel):
-    question: str
-    options: Optional[List[str]] = None
-    correct_answer: Optional[str] = None
-    explanation: Optional[str] = None
-    # topic and difficulty are injected from run_agent params, not from LLM
     topic: Optional[str] = None
     difficulty: Optional[str] = None
+    passage: Optional[str] = None
+    question: str
+    options: Optional[Dict[Literal["a", "b", "c", "d"], str]] = None
+    correct_answer: Optional[Literal["a", "b", "c", "d"]] = None
+    explanation: Optional[str] = None
 
 class QuestionBankOutput(BaseModel):
     questions: List[QuestionOutput]
