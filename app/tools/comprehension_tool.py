@@ -28,8 +28,6 @@ def generate_comprehension_passages(topic: str, difficulty: str, count: int = 1)
         topic (str): The topic for which to generate comprehension passages.
         difficulty (str): The difficulty level of the passages (e.g., "beginner", "intermediate", "advanced").
         count (int): The number of passages to generate. Default is 1.
-    Returns:
-        str: A string containing the generated comprehension passages and their associated questions in a structured format.
     """
 
     print(f"TOOL: Generating {count} {difficulty} comprehension passages for topic: {topic}")

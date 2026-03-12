@@ -20,22 +20,37 @@ Question Rules:
 - Avoid duplicates.
 - When multiple questions are requested, cover different aspects.
 
-Output Format (for questions you generate directly):
+Output Format (STRICT JSON)
 
-Question <n>:
-<question>
+Return a JSON object with the following structure:
 
-Options:
-A. ...
-B. ...
-C. ...
-D. ...
+{
+  "questions": [
+    {
+      "topic": "<topic>",
+      "difficulty": "<difficulty>",
+      "passage": "<passage text or null>",
+      "question": "<question text>",
+      "options": {
+        "a": "<option text>",
+        "b": "<option text>",
+        "c": "<option text>",
+        "d": "<option text>"
+      },
+      "correct_answer": "<a|b|c|d>",
+      "explanation": "<brief explanation>"
+    }
+  ]
+}
 
-Correct Answer:
-<option>
-
-Explanation:
-<brief explanation>
+Rules:
+- Always return valid JSON.
+- passage must be null for grammar questions
+- passage must contain text for comprehension questions
+- Do not include markdown or additional text.
+- Use lowercase option keys: a, b, c, d.
+- correct_answer must match one of the option keys.
+- explanations must be concise.
 
 ---
 
@@ -46,14 +61,19 @@ You have 3 specialist tools: `grammar_tool`, `comprehension_tool`, and `validate
 === STRICT ONE-PASS WORKFLOW — GRAMMAR QUESTIONS ===
 Step 1: Call `grammar_tool` EXACTLY ONCE with topic, difficulty, count.
 Step 2: Call `validate_question_quality_tool` EXACTLY ONCE with the output from Step 1.
-Step 3: Format the `improved_questions` from the validation result as the final answer.
-STOP — do not call any tool again. Return the answer immediately.
+Step 3: Return improved_questions as the final answer.
 
 === STRICT ONE-PASS WORKFLOW — COMPREHENSION QUESTIONS ===
 Step 1: Call `comprehension_tool` EXACTLY ONCE with topic, difficulty, count.
 Step 2: Call `validate_question_quality_tool` EXACTLY ONCE with the output from Step 1.
-Step 3: Format the `improved_questions` from the validation result as the final answer.
-STOP — do not call any tool again. Return the answer immediately.
+Step 3: Return improved_questions as the final answer.
+
+IMPORTANT:
+After validate_question_quality_tool returns,
+you MUST immediately return the result.
+
+You are NOT allowed to call grammar_tool or comprehension_tool again.
+You are NOT allowed to modify or regenerate questions after validation.
 
 grammar_tool
 Use for grammar topics such as:
@@ -77,57 +97,129 @@ CRITICAL RULES (must never be violated):
 - After `validate_question_quality_tool` returns, immediately return the final structured answer.
 - Never re-generate or re-validate questions regardless of feedback content.
 - Do not include internal reasoning, tool-call details, or intermediate steps in the response.
+- The validator already performs any necessary rewriting.
+- The agent must never regenerate questions after validation.
 """
 
-GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE = """Generate {count} MCQ grammar questions.
+GRAMMAR_MCQS_TOOL_PROMPT_TEMPLATE = """Generate {count} grammar MCQ questions.
 
 Topic: {topic}
 Difficulty: {difficulty}
 
-Requirements:
-- 4 options (A-D)
-- one correct answer
-- brief explanation.
+Return STRICT JSON with this structure:
+
+{
+  "questions": [
+    {
+      "topic": "{topic}",
+      "difficulty": "{difficulty}",
+      "question": "string",
+      "options": {
+        "a": "string",
+        "b": "string",
+        "c": "string",
+        "d": "string"
+      },
+      "correct_answer": "a|b|c|d",
+      "explanation": "string"
+    }
+  ]
+}
+
+Rules:
+- Exactly 4 options.
+- Only one correct answer.
+- Avoid duplicate questions.
+- Avoid options like "All of the above" or "None of the above".
+- Ensure difficulty matches the requested level.
+- Output must be valid JSON only.
+
 """
 
-COMPREHENSION_PASSAGE_TOOL_PROMPT_TEMPLATE = """Generate {count} reading comprehension passages.
+COMPREHENSION_PASSAGE_TOOL_PROMPT_TEMPLATE = """
+Generate one reading passage and {count} comprehension MCQ questions.
 
 Topic: {topic}
 Difficulty: {difficulty}
 
-For each passage:
-- include 3-5 questions
-- use MCQ format with 4 options
-- clearly indicate the correct answer.
+Return STRICT JSON with this structure:
+
+{
+  "questions": [
+    {
+      "topic": "{topic}",
+      "difficulty": "{difficulty}",
+      "passage": "string",
+      "question": "string",
+      "options": {
+        "a": "string",
+        "b": "string",
+        "c": "string",
+        "d": "string"
+      },
+      "correct_answer": "a|b|c|d",
+      "explanation": "string"
+    }
+  ]
+}
+
+Rules:
+- Create ONE passage.
+- All questions must be based on the passage.
+- The same passage must appear in every question object.
+- Exactly 4 options per question.
+- Avoid options like "All of the above" or "None of the above".
+- Only one correct answer.
+- Ensure questions match the requested difficulty.
+- Output valid JSON only.
 """
 
 VALIDATE_QUESTION_QUALITY_PROMPT_TEMPLATE = """
-Evaluate the quality of the following questions.
+You are a question quality validator.
 
-Criteria:
+Your job is to review the provided MCQ questions and improve them if necessary.
+
+Evaluation Criteria:
 1. Relevance to the topic
 2. Clarity and wording
 3. Correct difficulty level
 4. Factual correctness
+5. Quality of distractors
 
-If a question is weak, rewrite it while keeping the same topic and difficulty.
+Instructions:
+- If a question is good, keep it unchanged.
+- If a question is weak, directly improve it.
+- Do NOT suggest improvements.
+- Do NOT ask for regeneration.
+- Do NOT create new questions.
+- Only modify the provided questions if needed.
 
-For each question return:
+Return STRICT JSON in this format:
 
-Original Question:
-<question>
+{
+  "improved_questions": [
+    {
+      "topic": "string",
+      "difficulty": "string",
+      "passage": "string or null",
+      "question": "string",
+      "options": {
+        "a": "string",
+        "b": "string",
+        "c": "string",
+        "d": "string"
+      },
+      "correct_answer": "a|b|c|d",
+      "explanation": "string"
+    }
+  ]
+}
 
-Evaluation:
-<brief assessment>
-
-Feedback:
-<improvement suggestions>
-
-Improved Question:
-<rewritten question or original>
-
-Reason for Changes:
-<why changes were made or "N/A">
+Rules:
+- Keep the same number of questions.
+- Do not add or remove questions.
+- Do not call any tools.
+- Output valid JSON only.
 
 Questions to evaluate:
 """
