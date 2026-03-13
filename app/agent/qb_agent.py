@@ -33,8 +33,7 @@ def build_agent():
         tools=[generate_grammar_mcqs, generate_comprehension_passages, validate_question_quality],
         middleware=[generate_grammar_mcqs_limiter, generate_comprehension_passages_limiter, validate_question_quality_limiter],
         system_prompt=SYSTEM_PROMPT,
-        response_format=QuestionBankOutput,
-
+        response_format=QuestionBankOutput
     )
 
 async def run_agent(type: str, topic: str, difficulty: str, count: str):
