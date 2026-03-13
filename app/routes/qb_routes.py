@@ -18,7 +18,7 @@ async def health():
     return {"status": "ok"}
 
 
-@router.post("/generate-qb")
+@router.post("/generate")
 async def generate_question(request: GenerateQuestionRequest):
     print(f"""
         ROUTES: Received request to generate question for 
