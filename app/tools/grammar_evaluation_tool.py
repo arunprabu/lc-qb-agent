@@ -39,7 +39,7 @@ def evaluate_grammar(original_passage: str, transcribed_text: str) -> str:
     similarity = SequenceMatcher(None, original_passage.lower(), transcribed_text.lower()).ratio()
     accuracy_score = round(similarity * 100, 2)
     
-    prompt = f"""You are an expert English grammar and speech evaluation expert.
+    prompt = f"""You are an English grammar and speech evaluation expert.
 
       Evaluate the candidate's transcribed text against the original passage for grammar accuracy, pronunciation patterns, and fluency.
 
