@@ -19,5 +19,7 @@ class ComprehensionQuestion(Base):
     options = Column(JSON, nullable=True)
     correct_answer = Column(String, nullable=True)
     explanation = Column(String, nullable=True)
+    total_words = Column(Integer, nullable=True)
+    ideal_time_to_read = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

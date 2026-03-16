@@ -10,3 +10,5 @@ async def transcribe_audio(file: UploadFile = File(...)):
     audio_service = AudioService()
     result = await audio_service.transcribe_audio(file)
     return result  # returns {"transcript": "...", "language": "en"}
+
+
